@@ -9,9 +9,10 @@ from core.device import get_os, get_device_name
 
 
 class SetupScreen(tk.Frame):
-    def __init__(self, parent, on_success):
+    def __init__(self, parent, on_success, initial_error: str = ""):
         super().__init__(parent)
         self._on_success = on_success
+        self._initial_error = initial_error
         self._build()
 
     def _build(self):
@@ -37,7 +38,7 @@ class SetupScreen(tk.Frame):
         self._submit_btn = ttk.Button(self, text="Register Device", command=self._submit)
         self._submit_btn.grid(row=3, column=0, pady=(0, 12))
 
-        self._error_label = tk.Label(self, text="", fg="#cc0000", wraplength=280)
+        self._error_label = tk.Label(self, text=self._initial_error, fg="#cc0000", wraplength=280)
         self._error_label.grid(row=4, column=0, pady=(0, 20))
 
     def _submit(self):

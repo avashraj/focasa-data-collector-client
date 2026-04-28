@@ -1,6 +1,9 @@
+import threading
 import tkinter as tk
 
+import api.client as client
 import core.storage as storage
+from core.device import get_device_name, get_os
 from ui.setup_screen import SetupScreen
 from ui.home_screen import HomeScreen
 
@@ -24,13 +27,31 @@ class App(tk.Tk):
     def _start(self):
         config = storage.load_config()
         if config:
-            self._show_home(config["user_id"])
+            self._verify_and_start(config)
         else:
             self._show_setup()
 
-    def _show_setup(self):
+    def _verify_and_start(self, config: dict):
         self._clear()
-        frame = SetupScreen(self, on_success=self._show_home)
+        label = tk.Label(self, text="Verifying…", font=("Helvetica", 13), fg="#888888")
+        label.place(relx=0.5, rely=0.5, anchor="center")
+        threading.Thread(target=self._do_verify, args=(config,), daemon=True).start()
+
+    def _do_verify(self, config: dict):
+        try:
+            client.register(
+                api_key=config["api_key"],
+                user_id=config["user_id"],
+                device_name=get_device_name(),
+                os_name=get_os(),
+            )
+            self.after(0, lambda: self._show_home(config["user_id"]))
+        except Exception:
+            self.after(0, lambda: self._show_setup("API key invalid or expired. Please re-enter."))
+
+    def _show_setup(self, initial_error: str = ""):
+        self._clear()
+        frame = SetupScreen(self, on_success=self._show_home, initial_error=initial_error)
         frame.pack(fill="both", expand=True)
 
     def _show_home(self, user_id: str):
