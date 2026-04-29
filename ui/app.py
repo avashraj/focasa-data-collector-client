@@ -45,7 +45,7 @@ class App(tk.Tk):
                 device_name=get_device_name(),
                 os_name=get_os(),
             )
-            self.after(0, lambda: self._show_home(config["user_id"]))
+            self.after(0, lambda: self._show_home(config["user_id"], config["api_key"]))
         except Exception:
             self.after(0, lambda: self._show_setup("API key invalid or expired. Please re-enter."))
 
@@ -54,9 +54,14 @@ class App(tk.Tk):
         frame = SetupScreen(self, on_success=self._show_home, initial_error=initial_error)
         frame.pack(fill="both", expand=True)
 
-    def _show_home(self, user_id: str):
+    def _show_home(self, user_id: str, api_key: str):
         self._clear()
-        frame = HomeScreen(self, user_id=user_id)
+        frame = HomeScreen(
+            self,
+            user_id=user_id,
+            api_key=api_key,
+            on_auth_error=self._show_setup,
+        )
         frame.pack(fill="both", expand=True)
 
     def _clear(self):

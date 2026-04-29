@@ -63,7 +63,7 @@ class SetupScreen(tk.Frame):
             )
             confirmed_id = result.get("user_id") or result.get("id") or user_id
             storage.save_config(api_key=api_key, user_id=confirmed_id)
-            self.after(0, lambda uid=confirmed_id: self._on_success(uid))
+            self.after(0, lambda uid=confirmed_id, key=api_key: self._on_success(uid, key))
         except Exception as exc:
             self.after(0, lambda e=exc: self._handle_error(e))
 
