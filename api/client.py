@@ -25,3 +25,11 @@ def start_task(api_key: str, task_id: str, user_id: str, name: str, start: datet
     response = requests.post(url, json=payload, headers=headers, timeout=10)
     response.raise_for_status()
     return response.json()
+
+
+def end_task(api_key: str, task_id: str, user_id: str, end: datetime) -> None:
+    url = f"{BASE_URL}/v1/tasks/{task_id}/end"
+    headers = {"x-api-key": api_key}
+    payload = {"user_id": user_id, "end": end.isoformat()}
+    response = requests.patch(url, json=payload, headers=headers, timeout=10)
+    response.raise_for_status()

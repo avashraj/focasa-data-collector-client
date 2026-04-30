@@ -32,6 +32,9 @@ class HomeScreen(tk.Frame):
     def _build(self):
         self.columnconfigure(0, weight=1)
 
+        style = ttk.Style()
+        style.configure("Danger.TButton", foreground="red")
+
         title = tk.Label(self, text="Focasa", font=("Helvetica", 22, "bold"))
         title.grid(row=0, column=0, pady=(40, 4))
 
@@ -111,6 +114,14 @@ class HomeScreen(tk.Frame):
             wraplength=300,
         ).grid(row=1, column=0)
 
+        self._end_btn = ttk.Button(
+            self._task_frame,
+            text="End Task",
+            command=self._end_submit,
+            style="Danger.TButton",
+        )
+        self._end_btn.grid(row=2, column=0, pady=(12, 0))
+
     def _validate_length(self, proposed: str) -> bool:
         return len(proposed) <= 100
 
@@ -147,6 +158,57 @@ class HomeScreen(tk.Frame):
     def _on_start_success(self, name: str):
         self._set_status("")
         self._show_active(name)
+
+    def _end_submit(self):
+        active = storage.load_active_task()
+        if not active:
+            return
+
+        self._set_status("")
+        self._end_btn.config(state="disabled", text="Ending…")
+        self._retry_delay_ms = _RETRY_BASE_MS
+
+        task_id = active["task_id"]
+        end = datetime.now(tz=timezone.utc)
+        threading.Thread(
+            target=self._do_end, args=(task_id, end), daemon=True
+        ).start()
+
+    def _do_end(self, task_id: str, end: datetime):
+        try:
+            client.end_task(
+                api_key=self._api_key,
+                task_id=task_id,
+                user_id=self._user_id,
+                end=end,
+            )
+            storage.clear_active_task()
+            self.after(0, self._on_end_success)
+        except Exception as exc:
+            self.after(0, lambda e=exc: self._on_end_error(e, task_id, end))
+
+    def _on_end_success(self):
+        self._set_status("")
+        self._show_idle()
+
+    def _on_end_error(self, exc: Exception, task_id: str, end: datetime):
+        status_code = self._http_status(exc)
+
+        if status_code in (401, 403, 404):
+            self._on_auth_error("Session expired. Please re-enter your API key.")
+            return
+
+        self._set_status("Network may be down, retrying…", "#cc6600")
+
+        delay = self._retry_delay_ms
+        self._retry_delay_ms = min(self._retry_delay_ms * 2, _RETRY_MAX_MS)
+
+        self._pending_retry = self.after(
+            delay,
+            lambda: threading.Thread(
+                target=self._do_end, args=(task_id, end), daemon=True
+            ).start(),
+        )
 
     def _on_start_error(self, exc: Exception, task_id: str, name: str, start: datetime):
         status_code = self._http_status(exc)
