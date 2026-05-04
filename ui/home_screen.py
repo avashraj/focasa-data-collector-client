@@ -20,11 +20,15 @@ class HomeScreen(tk.Frame):
         user_id: str,
         api_key: str,
         on_auth_error: Callable[[str], None],
+        on_task_start: Callable[[], None] = lambda: None,
+        on_task_end: Callable[[], None] = lambda: None,
     ):
         super().__init__(parent)
         self._user_id = user_id
         self._api_key = api_key
         self._on_auth_error = on_auth_error
+        self._on_task_start = on_task_start
+        self._on_task_end = on_task_end
         self._retry_delay_ms = _RETRY_BASE_MS
         self._pending_retry: Optional[str] = None  # after() id
         self._build()
@@ -157,6 +161,7 @@ class HomeScreen(tk.Frame):
 
     def _on_start_success(self, name: str):
         self._set_status("")
+        self._on_task_start()
         self._show_active(name)
 
     def _end_submit(self):
@@ -189,6 +194,7 @@ class HomeScreen(tk.Frame):
 
     def _on_end_success(self):
         self._set_status("")
+        self._on_task_end()
         self._show_idle()
 
     def _on_end_error(self, exc: Exception, task_id: str, end: datetime):
