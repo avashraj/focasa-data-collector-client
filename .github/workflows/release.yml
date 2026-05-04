@@ -25,6 +25,27 @@ jobs:
       - name: Build app bundle
         run: uv run pyinstaller focasa.spec
 
+      - name: Ad-hoc sign app
+        run: codesign --force --deep --sign - dist/Focasa.app
+
+      - name: Stage DMG contents
+        run: |
+          mkdir dmg_stage
+          cp -r dist/Focasa.app dmg_stage/
+          cat > "dmg_stage/Open Me First.txt" << 'EOF'
+          HOW TO OPEN FOCASA
+          ──────────────────────────────────────
+          Because Focasa is not yet in the Mac App Store, macOS may
+          show a warning the first time you open it.
+
+          Fix (one-time only):
+            1. Right-click Focasa.app
+            2. Choose "Open"
+            3. Click "Open" in the dialog that appears
+
+          After this, Focasa opens normally every time.
+          EOF
+
       - name: Install create-dmg
         run: brew install create-dmg
 
@@ -39,7 +60,7 @@ jobs:
             --hide-extension "Focasa.app" \
             --app-drop-link 425 190 \
             "Focasa.dmg" \
-            "dist/Focasa.app"
+            dmg_stage/
 
       - name: Upload DMG to release
         uses: softprops/action-gh-release@v2
