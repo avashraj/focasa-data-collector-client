@@ -15,7 +15,7 @@ class App(tk.Tk):
         super().__init__()
         self.title("Focasa")
         self.resizable(False, False)
-        self.geometry("360x320")
+        self.geometry("360x390")
         self._center()
         self._screenshot_service: Optional[ScreenshotService] = None
         self._api_key: Optional[str] = None
@@ -42,7 +42,7 @@ class App(tk.Tk):
 
     def _center(self):
         self.update_idletasks()
-        w, h = 360, 320
+        w, h = 360, 390
         x = (self.winfo_screenwidth() // 2) - (w // 2)
         y = (self.winfo_screenheight() // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")

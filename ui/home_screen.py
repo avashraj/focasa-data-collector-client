@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -69,6 +71,34 @@ class HomeScreen(tk.Frame):
             self, text="", font=("Helvetica", 10), fg="#888888", wraplength=300
         )
         self._status_label.grid(row=4, column=0, pady=(8, 0))
+
+        if sys.platform == "darwin":
+            perm_frame = tk.Frame(self)
+            perm_frame.grid(row=5, column=0, pady=(14, 0))
+
+            btn_cfg = dict(
+                font=("Helvetica", 10),
+                fg="#888888",
+                bg=self.cget("bg"),
+                relief="flat",
+                cursor="hand2",
+                bd=0,
+                highlightthickness=0,
+            )
+
+            tk.Button(
+                perm_frame,
+                text="Grant Screen Recording ↗",
+                command=self._open_screen_privacy,
+                **btn_cfg,
+            ).pack(pady=(0, 4))
+
+            tk.Button(
+                perm_frame,
+                text="Grant Accessibility Access ↗",
+                command=self._open_accessibility_privacy,
+                **btn_cfg,
+            ).pack()
 
         active = storage.load_active_task()
         if active:
@@ -240,6 +270,22 @@ class HomeScreen(tk.Frame):
         if isinstance(exc, requests.HTTPError) and exc.response is not None:
             return exc.response.status_code
         return None
+
+    def _open_screen_privacy(self):
+        threading.Thread(
+            target=lambda: subprocess.run(
+                ["open", "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"]
+            ),
+            daemon=True,
+        ).start()
+
+    def _open_accessibility_privacy(self):
+        threading.Thread(
+            target=lambda: subprocess.run(
+                ["open", "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"]
+            ),
+            daemon=True,
+        ).start()
 
     def _set_status(self, message: str, color: str = "#888888"):
         self._status_label.config(text=message, fg=color)
